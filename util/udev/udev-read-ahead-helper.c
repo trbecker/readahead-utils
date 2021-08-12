@@ -6,10 +6,14 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <libmount/libmount.h>
 
 #include <sys/sysmacros.h>
+#include "device.h"
+#include "list.h"
+#include "libparser.h"
 
 #ifndef MOUNTINFO_PATH
 #define MOUNTINFO_PATH "/proc/self/mountinfo"
@@ -24,25 +28,18 @@
 
 static dev_t dev_from_arg(const char *);
 
-struct device_info {
-	char *device_number;
-	dev_t dev;
-	char *mount_point;
-	unsigned int read_ahead;
-};
-
 static void init_device_info(struct device_info *di, const char *device_number)
 {
 	di->device_number = strdup(device_number);
 	di->dev = dev_from_arg(device_number);
-	di->mount_point = NULL;
-	di->read_ahead = 0;
+	di->mountpoint = NULL;
+	di->fstype = NULL;
 }
 
 static void free_device_info(struct device_info *di)
 {
-	if (di->mount_point)
-		free(di->mount_point);
+	if (di->mountpoint)
+		free(di->mountpoint);
 	if (di->device_number)
 		free(di->device_number);
 }
@@ -93,7 +90,7 @@ static int get_mountinfo(struct device_info *device_info)
 		goto out_free_fs;
 	}
 
-	device_info->mount_point = strdup(target);
+	device_info->mountpoint = strdup(target);
 
 out_free_fs:
 	mnt_free_fs(fs);
@@ -104,110 +101,82 @@ out_free_tbl:
 	return ret;
 }
 
-static int get_readahead(struct device_info *di)
+static int get_readahead(struct device_info *di, int *readahead)
 {
-	int default_readahead;
-	FILE *fp;
+#define STRCMP(a, b) ((a) != NULL && (b) != NULL && strcmp((a), (b)) == 0)
+	LIST_DECLARE(configs);
+	struct list_head *lh;
 	int ret = 0;
-	char *line;
-	size_t n;
+	int default_ra = 0;
 
-	if ((fp = fopen(READAHEAD_CONFIG_FILE, "r")) == NULL) {
-		ret = errno;
-		goto out;
+	if ((ret = parse_config(READAHEAD_CONFIG_FILE, &configs)) != 0) {
+		fprintf(stderr, "Failed to read configuration (%d)\n", ret);
+		goto out_free_configs;
 	}
 
-	line = malloc(READAHEAD_LINE_LINE_LENGHT);
-	if (!line) {
-		ret = ENOMEM;
-		goto out_close;
-	}
-
-	n = READAHEAD_LINE_LINE_LENGHT;
-	errno = 0;
-	while ((ret = getline(&line, &n, fp)) > 0) {
-		char *p, *type = NULL, *entity = NULL, *readahead = NULL;
-
-
-		/* 
-		 * Line format: type entity readahead
-		 * type can be mountpoint
-		 * entity is the path to the mountpoint
-		 * readahead is the readahead value
-		 * Exception:
-		 *   - one line contains the default value in the format
-		 *     default <readahead>
-		 */
-		type = line;
-		for (p = line; p < line + n; p++) {
-			if (*p == ' ') {
-				*p = '\0';
-				if (!entity) {
-
-					if (strcmp("default", type) == 0) {
-						default_readahead = strtol(p + 1, NULL ,10);
-						break;
-					} else
-						entity = ++p;
-					continue;
-				}
-
-				if (!readahead) {
-					readahead = p + 1;
-					break;
-				}
-			}
+	for (lh = configs.next; lh != &configs; lh = lh->next) {
+		struct config_entry *ce =
+		       (struct config_entry *)(lh - offsetof(struct config_entry, list));
+		if (ce->mountpoint == NULL && ce->fstype == NULL) {
+			default_ra = ce->readahead;
+			continue;
 		}
 
-		if (strcmp("mountpoint", type) == 0 &&
-				strcmp(entity, di->mount_point) == 0) {
-			di->read_ahead = strtol(readahead, NULL, 10);
-			break;
+		if (STRCMP(ce->mountpoint, di->mountpoint) &&
+				STRCMP(ce->fstype, di->fstype)) {
+			*readahead = ce->readahead;
+			goto out_free_configs;
 		}
 
-		n = READAHEAD_LINE_LINE_LENGHT;
-		errno = 0;
+		if (STRCMP(ce->fstype, di->fstype)) {
+			*readahead = ce->readahead;
+			goto out_free_configs;
+		}
+
+		if (STRCMP(ce->mountpoint, di->mountpoint)) {
+			*readahead = ce->readahead;
+			goto out_free_configs;
+		}
 	}
 
-	if (errno) {
-		ret = errno;
-	} else {
-		ret = 0;
-		if (!di->read_ahead)
-			if (default_readahead) {
-				di->read_ahead = default_readahead;
-			} else {
-				ret = ENOENT;
-			}
+	/* fallthrough */
+	*readahead = default_ra;
+
+out_free_configs:
+	lh = configs.next;
+	while (lh != &configs) {
+		list_del(lh);
+		free(lh);
+		lh = configs.next;
 	}
 
-out_free:
-	free(line);
-out_close:
-	fclose(fp);
 out:
 	return ret;
+#undef STRCMP
 }
 
 static int get_device_info(const char *device_number, struct device_info *device_info)
 {
 	int ret = 0;
 	init_device_info(device_info, device_number);
-	if ((ret = get_mountinfo(device_info)) != 0)
-		return ret;
-
-	return get_readahead(device_info);
+	return get_mountinfo(device_info);
 }
 
 
 int main(int argc, char **argv)
 {
-	int ret;
+	int ret, readahead = 0;
 	struct device_info device_info;
 
-	if ((ret = get_device_info(argv[1], &device_info)) == 0)
-		printf("%d\n", device_info.read_ahead);
+	if ((ret = get_device_info(argv[1], &device_info)) != 0)
+		goto out_free;
+	if ((ret = get_readahead(&device_info, &readahead)) != 0)
+		goto out_free;
 
+	printf("%d\n", readahead);
+
+out_free:
 	free_device_info(&device_info);
+out:
 	return ret;
 }

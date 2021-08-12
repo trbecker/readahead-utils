@@ -16,9 +16,16 @@ depcomp
 install-sh
 missing
 *.swp
-util/udev/.deps/
+**/.deps/
 util/udev/Makefile.in
 util/udev/udev_read_ahead_helper
 *.o
 Makefile
 util/udev/Makefile
+ylwrap
+configure
+**/*.a
+libparser/parser.c
+libparser/parser.h
+libparser/scanner.c
+test/parser/parser_test
