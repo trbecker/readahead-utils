@@ -29,3 +29,9 @@ libparser/parser.c
 libparser/parser.h
 libparser/scanner.c
 test/parser/parser_test
+config.guess
+config.sub
+include/config.h
+include/stamp-h1
+libltdl/
+ltmain.sh
