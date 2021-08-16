@@ -6,4 +6,7 @@ struct device_info {
 	char *mountpoint;
 	char *fstype;
 };
+
+extern int get_mountinfo(const char *, struct device_info *, const char *);
+extern void free_device_info(struct device_info *);
 #endif

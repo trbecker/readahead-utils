@@ -19,5 +19,5 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_HEADERS([include/config.h])
-AC_CONFIG_FILES([Makefile util/udev/Makefile libparser/Makefile test/parser/Makefile])
+AC_CONFIG_FILES([Makefile util/udev/Makefile libparser/Makefile test/parser/Makefile libdevice/Makefile])
 AC_OUTPUT
