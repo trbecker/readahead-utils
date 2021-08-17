@@ -104,7 +104,11 @@ out:
 
 static int get_device_info(const char *device_number, struct device_info *device_info)
 {
-	return get_mountinfo(device_number, device_info, MOUNTINFO_PATH);
+	int ret = ENOENT;
+	for (int retry_count = 0; retry_count < 10 && ret != 0; retry_count++)
+		ret = get_mountinfo(device_number, device_info, MOUNTINFO_PATH);
+
+	return ret;
 }
 
 int main(int argc, char **argv)
