@@ -10,4 +10,5 @@ struct config_entry {
 };
 
 extern int parse_config(const char *, struct list_head *config_list);
+extern void config_entry_free(struct config_entry *);
 #endif

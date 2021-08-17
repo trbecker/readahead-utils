@@ -40,6 +40,11 @@ static int match_config(struct device_info *di, struct config_entry *ce) {
 #undef STRCMP
 }
 
+static void config_entry_list_head_free(struct list_head *lh) {
+	struct config_entry *ce = containerof(lh, struct config_entry, list);
+	config_entry_free(ce);
+}
+
 static int get_readahead(struct device_info *di, int *readahead)
 {
 	LIST_DECLARE(configs);
@@ -52,9 +57,8 @@ static int get_readahead(struct device_info *di, int *readahead)
 		goto out_free_configs;
 	}
 
-	for (lh = configs.next; lh != &configs; lh = lh->next) {
-		struct config_entry *ce =
-		       (struct config_entry *)(lh - offsetof(struct config_entry, list));
+	list_for_each(lh, &configs) {
+		struct config_entry *ce = containerof(lh, struct config_entry, list);
 		if (ce->mountpoint == NULL && ce->fstype == NULL) {
 			default_ra = ce->readahead;
 			continue;
@@ -70,13 +74,7 @@ static int get_readahead(struct device_info *di, int *readahead)
 	*readahead = default_ra;
 
 out_free_configs:
-	lh = configs.next;
-	while (lh != &configs) {
-		list_del(lh);
-		free(lh);
-		lh = configs.next;
-	}
-
+	list_free(&configs, config_entry_list_head_free);
 out:
 	return ret;
 }

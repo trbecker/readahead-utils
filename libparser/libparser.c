@@ -12,3 +12,12 @@ struct config_entry *config_entry_new() {
 	list_init(&new->list);
 	return new;
 }
+
+
+void config_entry_free(struct config_entry *ce)
+{
+#define sfree(ce) if (ce) free(ce)
+	sfree(ce->mountpoint);
+	sfree(ce->fstype);
+#undef sfree
+}

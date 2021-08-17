@@ -30,4 +30,19 @@ static void list_del(struct list_head *a)
 	a->next = a;
 	a->prev = a;
 }
+
+#define list_for_each(pos, head)				\
+	for (pos = (head)->next; pos != (head); pos = pos->next)
+
+#define list_free(head, free_func) ({				\
+	for (struct list_head *__lh = (head)->next;		\
+			__lh != head; __lh = (head)->next) {	\
+		list_del(__lh);					\
+		free_func(__lh);				\
+	}})							
+
+#define containerof(p, type, field) ({				\
+	const __typeof__(((type *)0)->field) *__ptr = (p);	\
+	(type *)((char *)__ptr - offsetof(type, field) ); })
+
 #endif
