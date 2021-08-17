@@ -1,1 +1,1 @@
-SUBDIRS = libparser libdevice test/parser util/udev
+SUBDIRS = src libparser libdevice test/parser util/udev
