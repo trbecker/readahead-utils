@@ -1,1 +1,0 @@
-SUBSYSTEM=="bdi", ACTION=="add", PROGRAM="/bin/udev-read-ahead-helper $kernel", ATTR{read_ahead_kb}="%c"

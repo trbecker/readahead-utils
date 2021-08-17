@@ -35,3 +35,4 @@ include/config.h
 include/stamp-h1
 libltdl/
 ltmain.sh
+util/udev/99-bdi.rules
