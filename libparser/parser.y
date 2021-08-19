@@ -1,8 +1,8 @@
 %{
 #include <stdio.h>
-#include "parser_util.h"
 #include "parser.h"
 #include "libparser.h"
+#include "log.h"
 
 extern int yylex();
 extern int yyparse();
@@ -75,5 +75,5 @@ int parse_config(const char *filename, struct list_head *list)
 }
 
 void yyerror(const char *s) {
-	printf("Parse error %s\n", s);
+	err("Failed to parse configuration: %s", s);
 }

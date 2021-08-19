@@ -1,5 +1,6 @@
 #include <syslog.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "log.h"
 #include "config.h"
@@ -23,8 +24,8 @@ static void vlog(int level, const char *fmt, va_list *args)
 	if (!msg)
 		return;
 
-	vsnprintf(msg, MSG_SIZE, fmt, args);
-	syslog(level, msg);
+	vsnprintf(msg, MSG_SIZE, fmt, *args);
+	syslog(level, "%s", msg);
 
 	free(msg);
 }

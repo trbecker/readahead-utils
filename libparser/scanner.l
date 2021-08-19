@@ -1,6 +1,5 @@
 %{
 #include "parser.h"
-#include "parser_util.h"
 #define yyterminate() return END_CONFIG
 %}
 %option noyywrap
