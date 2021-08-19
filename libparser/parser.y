@@ -62,16 +62,20 @@ endls:
 %%
 int parse_config(const char *filename, struct list_head *list)
 {
+	int ret;
+
 	yyin = fopen(filename, "r");
 	current = config_entry_new();
 	list_add(list, &current->list);
 
-	yyparse();
+	ret = yyparse();
 
 	/* The parser will create an empty entry that need to be eliminated */
 	list_del(&current->list);
 	free(current);
 	fclose(yyin);
+
+	return ret;
 }
 
 void yyerror(const char *s) {
