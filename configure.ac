@@ -1,4 +1,4 @@
-AC_INIT([readahead-utils], [0.1], [trbecker@gmail.com])
+AC_INIT([readahead-utils], [0.1.1], [trbecker@gmail.com])
 AC_PROG_CC
 AC_PROG_LEX
 AC_PROG_YACC
