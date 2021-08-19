@@ -16,7 +16,7 @@ Utility to set readahead at mountpoint.
 
 %prep
 %autosetup
-
+./autogen.sh
 
 %build
 %configure
