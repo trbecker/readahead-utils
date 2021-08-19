@@ -74,7 +74,7 @@ static int get_readahead(struct device_info *di, int *readahead)
 
 	if ((ret = parse_config(READAHEAD_CONFIG_FILE, &configs)) != 0) {
 		err("Failed to read configuration (%d)\n", ret);
-		goto out_free_configs;
+		goto out;
 	}
 
 	debug_config_entries(&configs);
@@ -88,7 +88,7 @@ static int get_readahead(struct device_info *di, int *readahead)
 
 		if (match_config(di, ce)) {
 			*readahead = ce->readahead;
-			goto out_free_configs;
+			goto out;
 		}
 	}
 
@@ -96,9 +96,8 @@ static int get_readahead(struct device_info *di, int *readahead)
 	debug("Setting readahead to default %d\n", default_ra);
 	*readahead = default_ra;
 
-out_free_configs:
-	list_free(&configs, config_entry_list_head_free);
 out:
+	list_free(&configs, config_entry_list_head_free);
 	return ret;
 }
 
@@ -120,21 +119,20 @@ int main(int argc, char **argv)
 
 	if ((ret = get_device_info(argv[1], &device_info)) != 0) {
 		err("Failed to find device (%d)\n", ret);
-		goto out_free;
+		goto out;
 	}
 
 	if ((ret = get_readahead(&device_info, &readahead)) != 0) {
 		err("Failed to find readahead (%d)\n", ret);
-		goto out_free;
+		goto out;
 	}
 
 	info("Setting read ahead for bdi %s to %d\n", argv[1], readahead);
 
 	printf("%d\n", readahead);
 
-out_free:
-	free_device_info(&device_info);
 out:
+	free_device_info(&device_info);
 	log_close();
 	debug("exiting with code %d\n", ret);
 	return ret;
