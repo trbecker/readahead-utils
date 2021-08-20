@@ -117,8 +117,15 @@ int main(int argc, char **argv)
 
 	log_open();
 
+	if (argc != 2) {
+		err("usage: %s <bdi_number>\n", argv[0]);
+		return ENOENT;
+	}
+
+	debug("Attempting to set readahead for bdi %s\n", argv[1]);
+
 	if ((ret = get_device_info(argv[1], &device_info)) != 0) {
-		err("Failed to find device (%d)\n", ret);
+		err("Failed to find device %s (%d)\n", argv[1], ret);
 		goto out;
 	}
 
