@@ -27,6 +27,7 @@ struct config_entry *current;
 %token MOUNTPOINT
 %token FSTYPE
 %token READAHEAD
+%token <sval> FS
 %token END_CONFIG 0
 
 %%
@@ -53,7 +54,7 @@ default:
 
 pair:
 	MOUNTPOINT EQ STRING	{ current->mountpoint = $3; }
-	| FSTYPE EQ STRING	{ current->fstype = $3; }
+	| FSTYPE EQ FS		{ current->fstype = $3; }
 	| READAHEAD EQ INT	{ current->readahead = $3; }
 
 endls: 
